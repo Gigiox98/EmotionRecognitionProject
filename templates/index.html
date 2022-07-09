@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Affective Computing</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+<script>
+
+function checkVideo() {
+	video=document.getElementsByName("video")[0].value
+	if (video!="" && typeof video!="undefined") {
+		if(video.includes(".mp4") || video.includes(".webm") || video.includes(".avi") || video.includes(".avi") || video.includes(".mov") || video.includes(".mpeg") || video.includes(".mpg") || video.includes(".wmv") || video.includes(".m4v")) {
+  		document.getElementById("1").style.display="none";
+  		document.getElementById('loadingmsg').style.display = 'block';
+  		document.getElementById('loadingover').style.display = 'block';
+  		mediaRecorder.onstop = (ev)=>{}
+  		stop(); 
+		return true;
+		}
+	
+		else {	
+			if(typeof document.getElementsByTagName("h5")[2]=="undefined") { 
+			element=document.getElementsByClassName("custom-file")[0]
+			text=document.createTextNode("Please insert an acceptable file (with extension .mp4,.webm,.avi,.mov,.mpeg,.mpg,.wmv,.m4v)")
+			h5=document.createElement("h5")
+			h5.appendChild(text)
+			element.appendChild(h5)
+			}
+			return false
+		}
+	}
+	else {
+		if(typeof document.getElementsByTagName("h5")[2]=="undefined") {
+		element=document.getElementsByClassName("custom-file")[0];
+		text=document.createTextNode("Please insert an acceptable file (with extension .mp4,.webm,.avi,.mov,.mpeg,.mpg,.wmv,.m4v)");
+		h5=document.createElement("h5");
+		h5.appendChild(text);
+		element.appendChild(h5);
+		}
+		return false
+	}
+}
+
+function stop() {
+  var video = document.querySelector("#videoElement");
+  var stream = video.srcObject;
+  var tracks = stream.getTracks();
+
+  for (var i = 0; i < tracks.length; i++) {
+    var track = tracks[i];
+    track.stop();
+  }
+
+  video.srcObject = null;
+  document.getElementsByTagName("nav")[1].remove();
+  document.getElementById("2").style.display = "inline";
+  document.getElementById("videoElement").style.display="none";
+}
+
+mediaRecorder="";
+
+function enableWebcam() {
+  document.getElementById("2").style.display ="none";
+  var video = document.querySelector("#videoElement");
+  navigator.mediaDevices.getUserMedia({audio:false, video: true })
+    .then(function (stream) {
+      video.srcObject = stream;
+      navbar=document.createElement("nav");
+      navbar.classList.add("navbar");
+      for (i=0;i<3;i++) {
+      window['button'+i]=document.createElement("button");
+      window['button'+i].classList.add("btn-lg");
+      window['button'+i].classList.add("btn-dark");
+      }
+      button0.onclick=function() {stop()};
+      button0.appendChild(document.createTextNode("Exit"));
+      button1.appendChild(document.createTextNode("Rec"));
+      button2.appendChild(document.createTextNode("Stop Rec"));
+      button2.disabled=true;
+      container=document.getElementsByClassName("container-fluid bg-2 text-center")[0];
+      navbar.appendChild(button0);
+      navbar.appendChild(button1);
+      navbar.appendChild(button2);
+      container.appendChild(navbar);
+      video.style.display="block";
+      mediaRecorder = new MediaRecorder(stream,{mimeType: 'video/webm;codecs=opus'});
+      chunks = [];  
+    
+      button1.addEventListener('click', (ev)=>{
+                mediaRecorder.start();
+		button0.disabled=true;
+		button1.disabled=true;
+		button2.disabled=false;
+            })
+      button2.addEventListener('click', (ev)=>{
+                mediaRecorder.stop();
+		button0.disabled=false;
+		button1.disabled=false;
+		button2.disabled=true;
+            });
+      mediaRecorder.ondataavailable = function(ev) {
+		chunks.push(ev.data);
+            }
+      mediaRecorder.onstop = (ev)=>{
+                blob = new Blob(chunks, {type :'video/webm'});
+                chunks = [];
+		document.getElementById("1").style.display="none";
+  		document.getElementById('loadingmsg').style.display = 'block';
+  		document.getElementById('loadingover').style.display = 'block';
+  		mediaRecorder.onstop = (ev)=>{}
+  		stop(); 
+		var fd = new FormData();
+		fd.append('video',blob,'WebcamVideo.webm');
+		$.ajax({
+    		type: 'POST',
+    		url: '/videoload',
+    		data: fd,
+    		processData: false,
+    		contentType: false
+		}).done(function(response) {
+		doc=document.open("text/html","replace");
+		doc.write(response);
+		doc.close();
+});
+            }
+	
+    })
+    .catch(function (err0r) {
+      console.log(err0r);
+    });
+}
+
+</script>
+  <style>
+      #loadingmsg {
+      color: black;
+      background: #fff; 
+      padding: 10px;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      z-index: 100;
+      margin-right: -25%;
+      margin-bottom: -25%;
+      }
+      #loadingover {
+      background: black;
+      z-index: 99;
+      width: 100%;
+      height: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
+      filter: alpha(opacity=80);
+      -moz-opacity: 0.8;
+      -khtml-opacity: 0.8;
+      opacity: 0.8;
+    }
+  body {
+    font: 20px Montserrat, sans-serif;
+    line-height: 1.8;
+    color: #f5f6f7;
+  }
+  p {font-size: 16px;}
+  .margin {margin-bottom: 45px;}
+  .bg-1 { 
+    background-color: grey;
+    color: #ffffff;
+  }
+  .bg-2 { 
+    background-color: #474e5d; /* Dark Blue */
+    color: #ffffff;
+  }
+  .bg-3 { 
+    background-color: #ffffff; /* White */
+    color: #555555;
+  }
+  .bg-4 { 
+    background-color: #2f2f2f; /* Black Gray */
+    color: #fff;
+  }
+  .container-fluid {
+    padding-top: 70px;
+    padding-bottom: 70px;
+  }
+  .navbar {
+    padding-top: 15px;
+    padding-bottom: 15px;
+    border: 0;
+    border-radius: 0;
+    margin-bottom: 0;
+    font-size: 12px;
+    letter-spacing: 5px;
+  }
+  .navbar-nav  li a:hover {
+    color: #1abc9c !important;
+  }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-default">
+  <div class="container">
+    <h3 style="color:black"> Deep Learning Web App</h3>
+    <div class="navbar-header">
+    </div>
+  </div>
+</nav>
+
+<!-- First Container -->
+<div id='loadingmsg' style='display: none;'>Computing file, please wait...</div>
+<div id='loadingover' style='display: none;'></div>
+<div class="container-fluid bg-1 text-center">
+  <h1 class="margin">Upload your video here for emotion recognition</h1>
+  <img src="{{url_for('static',filename='affective.jpg')}}" class="img-responsive" style="display:inline" width="500" height="500">
+<h3></h3>
+<form action="/videoload" method="POST" enctype="multipart/form-data" name="videoloader" onsubmit="return checkVideo()">
+<div class="custom-file">
+  <input type="file" class="custom-file-input" name="video" accept=".mp4,.webm,.avi,.mov,.mpeg,.mpg,.wmv,.m4v">
+  <label class="custom-file-label" for="customFile">Select video</label>
+</div>
+<button id="1" type="submit" class="btn-lg btn-dark">Submit</button>
+</form>
+</div>
+
+<!-- Second Container -->
+<div class="container-fluid bg-2 text-center">
+  <h1 class="margin">Emotion Recognition in real-time</h1>
+	<button id="2" class="btn-lg btn-dark" onclick="enableWebcam()">Click here to start the emotion recognition</button><h5><h5>
+	<video style="display:none" width="500" height="500" class="container text-center" autoplay="true" id="videoElement"></video>
+</div>
+
+</body>
+</html>

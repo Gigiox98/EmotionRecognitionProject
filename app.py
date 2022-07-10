@@ -69,6 +69,7 @@ def loading():
 					video.save(path_video)
 					mean=[0.0,0.0,0.0,0.0,0.0,0.0,0.0]
 					numbers=[0,1,2,3,4,5,6]
+					numbersInverted=[6,5,4,3,2,1,0]
 					fig,(ax1,ax2)=plt.subplots(1,2)
 					vid_capture = cv2.VideoCapture(path_video)
 					vid_cod = cv2.VideoWriter_fourcc(*'H264')
@@ -77,7 +78,7 @@ def loading():
 					model.eval()
 					num_frames=0.0
 					file=open(os.path.join(os.getcwd(),"static/logRecognition"+integer+".txt"),"w")
-					file.write("[["+"{'Name':'downloadVideo"+integer+".mp4'"+", 'Size':"+str(sum)+"}],[")
+					file.write("[["+"{\"Name\":\"downloadVideo"+integer+".mp4\""+", \"Size\":\""+str(sum)+"\"}],[")
 					ret,frame = vid_capture.read()
 					preprocess = transforms.Compose([
 						transforms.Resize(256),
@@ -85,7 +86,7 @@ def loading():
 						transforms.ToTensor(),
 						transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 					])
-					emotions=('Angry', 'Disgust', 'Fear', 'Happy', 'Neutral','Sad','Surprise')
+					emotions=("Angry", "Disgust", "Fear", "Happy", "Neutral","Sad","Surprise")
 					setattr(request,"video","static/downloadVideo"+integer+".mp4")
 					lock.release()
 					while(ret):
@@ -139,7 +140,12 @@ def loading():
 						ax2.set_xlabel('Probability')
 						ax2.set_title('Emotion Recognition')
 						ax1.set_title(array[6])
-						file.write(str({'Frame':num_frames,str(array[6]):str(array2[6]),str(array[5]):str(array2[5]),str(array[4]):str(array2[4]),str(array[3]):str(array2[3]),str(array[2]):str(array2[2]),str(array[1]):str(array2[1]),str(array[0]):str(array2[0])})+",")
+						file.write("{\"Frame\":\""+str(num_frames)+"\",")
+						for x in numbersInverted:
+							if (x>0):
+								file.write("\""+str(array[x])+"\":"+"\""+str(array2[x])+"\",")
+							else:
+								file.write("\""+str(array[x])+"\":"+"\""+str(array2[x])+"\"},")
 						buf=io.BytesIO()
 						plt.savefig(buf,format='jpg')
 						buf.seek(0)
@@ -153,10 +159,13 @@ def loading():
 					html=html+" <source src=\""+getattr(request,"video")+"\" type=\"video/mp4\"/></video></div>"
 					vid_capture.release()
 					cv2.destroyAllWindows()
-					file.write(str({'TotalFrames':num_frames})+"],[")
+					file.write("{\"TotalFrames\":"+str(num_frames)+"}],[")
 					for x in numbers:
-						if(mean[x]>0):
-							file.write(str({'Emotion':emotions[x],'Average probability':str(mean[x]/num_frames*100)})+",") 
+						if(mean[x]>=0):
+							if (x<6):
+								file.write("{\"Emotion\":\""+emotions[x]+"\",\"Average probability\":\""+str(mean[x]/num_frames*100)+"\"}"+",")
+							else:
+								file.write("{\"Emotion\":\""+emotions[x]+"\",\"Average probability\":\""+str(mean[x]/num_frames*100)+"\"}")
 					file.write("]]\n")
 					file.close()
 					os.remove(path_video)
